@@ -139,7 +139,7 @@ public class InlinerTest {
 
 		String output = inliner.inline(m);
 
-		assertThat(output, endsWith(""+time));
+		assertThat(output, endsWith(""+time+"000000"));
 	}
 
 	@Test
