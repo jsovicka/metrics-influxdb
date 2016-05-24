@@ -8,3 +8,4 @@ bin
 build
 test-output
 
+/.nb-gradle/
