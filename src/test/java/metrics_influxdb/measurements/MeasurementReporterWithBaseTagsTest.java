@@ -30,7 +30,7 @@ public class MeasurementReporterWithBaseTagsTest {
 		Map<String, String> baseTags = new HashMap<>();
 		baseTags.put(serverKey, serverName);
 
-		MeasurementReporter reporter = new MeasurementReporter(sender, registry, null, TimeUnit.SECONDS, TimeUnit.MILLISECONDS, Clock.defaultClock(), baseTags, MetricMeasurementTransformer.NOOP);
+		MeasurementReporter reporter = new MeasurementReporter(sender, registry, null, TimeUnit.SECONDS, TimeUnit.MILLISECONDS, Clock.defaultClock(), baseTags, MetricMeasurementTransformer.NOOP, false );
 		assertThat(sender.getFrames().size(), is(0));
 
 		// Let's test with one counter

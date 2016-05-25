@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import com.codahale.metrics.Clock;
 import com.codahale.metrics.Counter;
+import com.codahale.metrics.Counting;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
@@ -24,21 +25,25 @@ public class MeasurementReporter extends ScheduledReporter{
 	private final Clock clock;
 	private Map<String, String> baseTags;
 	private MetricMeasurementTransformer transformer;
+        protected final Map<String, Long> previousCount = new HashMap<>();
+        private boolean skipIdleMetrics;
 
-	public MeasurementReporter(Sender sender, MetricRegistry registry, MetricFilter filter, TimeUnit rateUnit, TimeUnit durationUnit, Clock clock, Map<String, String> baseTags, MetricMeasurementTransformer transformer, ScheduledExecutorService executor) {
+	public MeasurementReporter(Sender sender, MetricRegistry registry, MetricFilter filter, TimeUnit rateUnit, TimeUnit durationUnit, Clock clock, Map<String, String> baseTags, MetricMeasurementTransformer transformer, boolean skipIdleMetrics, ScheduledExecutorService executor) {
 		super(registry, "measurement-reporter", filter, rateUnit, durationUnit, executor);
 		this.baseTags = baseTags;
 		this.sender = sender;
 		this.clock = clock;
 		this.transformer = transformer;
+                this.skipIdleMetrics = skipIdleMetrics;
 	}
 
-	public MeasurementReporter(Sender sender, MetricRegistry registry, MetricFilter filter, TimeUnit rateUnit, TimeUnit durationUnit, Clock clock, Map<String, String> baseTags, MetricMeasurementTransformer transformer) {
+	public MeasurementReporter(Sender sender, MetricRegistry registry, MetricFilter filter, TimeUnit rateUnit, TimeUnit durationUnit, Clock clock, Map<String, String> baseTags, MetricMeasurementTransformer transformer, boolean skipIdleMetrics) {
 		super(registry, "measurement-reporter", filter, rateUnit, durationUnit);
 		this.baseTags = baseTags;
 		this.sender = sender;
 		this.clock = clock;
 		this.transformer = transformer;
+            this.skipIdleMetrics = skipIdleMetrics;
 	}
 
 	@SuppressWarnings("rawtypes")
@@ -52,22 +57,35 @@ public class MeasurementReporter extends ScheduledReporter{
 		final long timestamp = clock.getTime();
 
 		for (Map.Entry<String, Gauge> entry : gauges.entrySet()) {
+                    
 			sender.send(fromGauge(entry.getKey(), entry.getValue(), timestamp));
 		}
 
 		for (Map.Entry<String, Counter> entry : counters.entrySet()) {
+                    if (canSkip(entry.getKey(), entry.getValue())){
+                        continue;
+                    }
 			sender.send(fromCounter(entry.getKey(), entry.getValue(), timestamp));
 		}
 
 		for (Map.Entry<String, Histogram> entry : histograms.entrySet()) {
+                    if (canSkip(entry.getKey(), entry.getValue())){
+                        continue;
+                    }
 			sender.send(fromHistogram(entry.getKey(), entry.getValue(), timestamp));
 		}
 
 		for (Map.Entry<String, Meter> entry : meters.entrySet()) {
+                    if (canSkip(entry.getKey(), entry.getValue())){
+                        continue;
+                    }
 			sender.send(fromMeter(entry.getKey(), entry.getValue(), timestamp));
 		}
 
 		for (Map.Entry<String, Timer> entry : timers.entrySet()) {
+                    if (canSkip(entry.getKey(), entry.getValue())){
+                        continue;
+                    }
 			sender.send(fromTimer(entry.getKey(), entry.getValue(), timestamp));
 		}
 
@@ -190,4 +208,11 @@ public class MeasurementReporter extends ScheduledReporter{
 
 		return measure;
 	}
+
+    private boolean canSkip(String key, Counting value) {
+            if(!skipIdleMetrics)
+                return false;
+            final Long lastCount = previousCount.computeIfAbsent(key,(k)->0L);
+            return value.getCount()==0||value.getCount()==lastCount;
+    }
 }

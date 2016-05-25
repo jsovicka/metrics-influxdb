@@ -190,8 +190,8 @@ public class InfluxdbReporter  {
 					throw new IllegalStateException("unsupported protocol: " + protocol);
 				}
 				reporter = executor == null
-						? new MeasurementReporter(s, registry, filter, rateUnit, durationUnit, clock, tags, transformer)
-						: new MeasurementReporter(s, registry, filter, rateUnit, durationUnit, clock, tags, transformer, executor)
+						? new MeasurementReporter(s, registry, filter, rateUnit, durationUnit, clock, tags, transformer,skipIdleMetrics)
+						: new MeasurementReporter(s, registry, filter, rateUnit, durationUnit, clock, tags, transformer, skipIdleMetrics, executor)
 						;
 			}
 			return reporter;
