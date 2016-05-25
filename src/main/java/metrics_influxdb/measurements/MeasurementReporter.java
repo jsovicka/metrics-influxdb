@@ -19,6 +19,8 @@ import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 
 import metrics_influxdb.api.measurements.MetricMeasurementTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MeasurementReporter extends ScheduledReporter{
 	private final Sender sender;
@@ -27,6 +29,7 @@ public class MeasurementReporter extends ScheduledReporter{
 	private MetricMeasurementTransformer transformer;
         protected final Map<String, Long> previousCount = new HashMap<>();
         private boolean skipIdleMetrics;
+        static final Logger LOGGER = LoggerFactory.getLogger(MeasurementReporter.class);
 
 	public MeasurementReporter(Sender sender, MetricRegistry registry, MetricFilter filter, TimeUnit rateUnit, TimeUnit durationUnit, Clock clock, Map<String, String> baseTags, MetricMeasurementTransformer transformer, boolean skipIdleMetrics, ScheduledExecutorService executor) {
 		super(registry, "measurement-reporter", filter, rateUnit, durationUnit, executor);
@@ -62,30 +65,38 @@ public class MeasurementReporter extends ScheduledReporter{
 		}
 
 		for (Map.Entry<String, Counter> entry : counters.entrySet()) {
-                    if (canSkip(entry.getKey(), entry.getValue())){
+                    if (canSkip(entry.getKey(), entry.getValue())){                        
+                        LOGGER.info("skipping idle:"+entry.getKey());
                         continue;
                     }
+                        LOGGER.info("not skipping :"+entry.getKey()+":"+entry.getValue().getCount());
 			sender.send(fromCounter(entry.getKey(), entry.getValue(), timestamp));
 		}
 
 		for (Map.Entry<String, Histogram> entry : histograms.entrySet()) {
                     if (canSkip(entry.getKey(), entry.getValue())){
+                        LOGGER.info("skipping idle:"+entry.getKey());
                         continue;
                     }
+                        LOGGER.info("not skipping :"+entry.getKey()+":"+entry.getValue().getCount());
 			sender.send(fromHistogram(entry.getKey(), entry.getValue(), timestamp));
 		}
 
 		for (Map.Entry<String, Meter> entry : meters.entrySet()) {
                     if (canSkip(entry.getKey(), entry.getValue())){
+                        LOGGER.info("skipping idle:"+entry.getKey());
                         continue;
                     }
+                        LOGGER.info("not skipping :"+entry.getKey()+":"+entry.getValue().getCount());
 			sender.send(fromMeter(entry.getKey(), entry.getValue(), timestamp));
 		}
 
 		for (Map.Entry<String, Timer> entry : timers.entrySet()) {
                     if (canSkip(entry.getKey(), entry.getValue())){
+                        LOGGER.info("skipping idle:"+entry.getKey());
                         continue;
                     }
+                        LOGGER.info("not skipping :"+entry.getKey()+":"+entry.getValue().getCount());
 			sender.send(fromTimer(entry.getKey(), entry.getValue(), timestamp));
 		}
 
@@ -213,6 +224,7 @@ public class MeasurementReporter extends ScheduledReporter{
             if(!skipIdleMetrics)
                 return false;
             final Long lastCount = previousCount.computeIfAbsent(key,(k)->0L);
+            previousCount.put(key, value.getCount());
             return value.getCount()==0||value.getCount()==lastCount;
     }
 }
