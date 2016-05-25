@@ -231,8 +231,10 @@ public class ReporterV08 extends ScheduledReporter {
 
 	private void reportTimer(String name, Timer timer, long timestamp) {
 		if (canSkipMetric(name, timer)) {
+                        LOGGER.info("skipping idle metric:"+name);
 			return;
 		}
+                LOGGER.info("not skipping metric:"+name+ "count="+timer.getCount());
 		final Snapshot snapshot = timer.getSnapshot();
 		Object[] p = pointsTimer[0];
 		p[0] = influxdb.convertTimestamp(timestamp);
