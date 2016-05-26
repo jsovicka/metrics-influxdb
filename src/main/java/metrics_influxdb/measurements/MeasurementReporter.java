@@ -66,37 +66,29 @@ public class MeasurementReporter extends ScheduledReporter{
 
 		for (Map.Entry<String, Counter> entry : counters.entrySet()) {
                     if (canSkip(entry.getKey(), entry.getValue())){                        
-                        LOGGER.info("skipping idle:"+entry.getKey());
                         continue;
                     }
-                        LOGGER.info("not skipping :"+entry.getKey()+":"+entry.getValue().getCount());
 			sender.send(fromCounter(entry.getKey(), entry.getValue(), timestamp));
 		}
 
 		for (Map.Entry<String, Histogram> entry : histograms.entrySet()) {
-                    if (canSkip(entry.getKey(), entry.getValue())){
-                        LOGGER.info("skipping idle:"+entry.getKey());
+                    if (canSkip(entry.getKey(), entry.getValue())){                     
                         continue;
-                    }
-                        LOGGER.info("not skipping :"+entry.getKey()+":"+entry.getValue().getCount());
+                    }                     
 			sender.send(fromHistogram(entry.getKey(), entry.getValue(), timestamp));
 		}
 
 		for (Map.Entry<String, Meter> entry : meters.entrySet()) {
                     if (canSkip(entry.getKey(), entry.getValue())){
-                        LOGGER.info("skipping idle:"+entry.getKey());
                         continue;
                     }
-                        LOGGER.info("not skipping :"+entry.getKey()+":"+entry.getValue().getCount());
 			sender.send(fromMeter(entry.getKey(), entry.getValue(), timestamp));
 		}
 
 		for (Map.Entry<String, Timer> entry : timers.entrySet()) {
                     if (canSkip(entry.getKey(), entry.getValue())){
-                        LOGGER.info("skipping idle:"+entry.getKey());
                         continue;
                     }
-                        LOGGER.info("not skipping :"+entry.getKey()+":"+entry.getValue().getCount());
 			sender.send(fromTimer(entry.getKey(), entry.getValue(), timestamp));
 		}
 
